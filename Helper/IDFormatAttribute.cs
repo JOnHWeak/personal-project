@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 namespace personal_project.Helper
 {
-    public class IDAttribute : ValidationAttribute
+    public class TitleIdFormatAttribute : ValidationAttribute
     {
         private static readonly Regex _regex = new Regex(@"^[A-Z]{2}\d{4}$", RegexOptions.Compiled);
 

@@ -8,7 +8,8 @@ var connectionString = builder.Configuration.GetConnectionString("PubsDatabase")
 
 // Add DbContext with connection string
 builder.Services.AddDbContext<pubsContext>(options =>
-    options.UseSqlServer(connectionString)); 
+    options.UseSqlServer(connectionString));
+
 
 
 builder.Services.AddControllers();

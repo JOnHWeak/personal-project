@@ -10,12 +10,12 @@ namespace personal_project.DTO
             [Required]
             [TitleIdFormat(ErrorMessage = "Title ID must be in the format: 2 uppercase letters followed by 4 digits.")]
             public string title_id { get; set; }
-
+            [Required]
             [StringLength(80, ErrorMessage = "Title cannot exceed 80 characters.")]
             public string title { get; set; }
-
+            
             [StringLength(12, ErrorMessage = "Type cannot exceed 12 characters.")]
-            public string type { get; set; }
+            public string? type { get; set; }
 
             public string pub_id { get; set; }
             public decimal? price { get; set; }
@@ -27,11 +27,12 @@ namespace personal_project.DTO
         }
         public class UpdateTitle
         {
+            
             [StringLength(80, ErrorMessage = "Title cannot exceed 80 characters.")]
             public string title { get; set; }
 
             [StringLength(12, ErrorMessage = "Type cannot exceed 12 characters.")]
-            public string type { get; set; }
+            public string? type { get; set; }
 
             public string pub_id { get; set; }
             public decimal? price { get; set; }

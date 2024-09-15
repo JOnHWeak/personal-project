@@ -99,9 +99,8 @@ namespace personal_project.Controllers
             {
                 return BadRequest(ModelState);
             }
-            // Check if the StoreID already exists
-            var existingStore = await _context.stores.AnyAsync(s => s.stor_id == storeForm.stor_id);
-            if (existingStore)
+            // Check if the StoreID already exists using the helper method
+            if (await CheckIDExisted.StoreExists(_context, storeForm.stor_id))
             {
                 return BadRequest(new { Message = "The StoreID already exists." });
             }
@@ -151,10 +150,6 @@ namespace personal_project.Controllers
 
             return Ok(new { Message = $"Store '{store.stor_name}' with ID '{store.stor_id}' deleted successfully." });
         }
-
-        private bool StoreExists(string id)
-        {
-            return _context.stores.Any(e => e.stor_id == id);
-        }
+        
     }
 }

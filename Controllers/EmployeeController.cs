@@ -19,10 +19,8 @@ namespace personal_project.Controllers
 
         public EmployeesController(pubsContext context)
         {
-            _context = context;
-        }
-
-       
+            _context = context;          
+        }      
 
         // GET: api/employees
         [HttpGet]
@@ -66,23 +64,18 @@ namespace personal_project.Controllers
             {
                 return BadRequest(ModelState);
             }
-
             try
             {
-                // Check if the job_id exists in the job table
-                var jobExists = await _context.jobs.AnyAsync(j => j.job_id == form.job_id);
-                if (!jobExists)
+                // Use CheckIDExisted helper methods
+                if (!await CheckIDExisted.JobExists(_context, form.job_id))
                 {
                     return BadRequest(new { Message = "The specified Job ID does not exist." });
                 }
 
-                // Check if the pub_id exists in the publisher table
-                var publisherExists = await _context.publishers.AnyAsync(p => p.pub_id == form.pub_id);
-                if (!publisherExists)
+                if (!await CheckIDExisted.PublisherExists(_context, form.pub_id))
                 {
                     return BadRequest(new { Message = "The specified Publisher ID does not exist." });
                 }
-
                 // Update the employee's details                 
                 existingEmployee.fname = form.fname;
                 existingEmployee.minit = form.minit;
@@ -97,21 +90,15 @@ namespace personal_project.Controllers
                 return Ok(new { Message = "Employee updated successfully." });
             }
             catch (DbUpdateException ex)
-            {
+            {               
                 // Check for specific SQL constraint violations
-                if (ex.InnerException != null && ex.InnerException.Message.Contains("The level for job_id"))
-                {
-                    return BadRequest(new { Message = "job_lvl is out of the allowed range." });
-                }
-                else if (ex.InnerException != null && ex.InnerException.Message.Contains("minit"))
+                if (ex.InnerException != null && ex.InnerException.Message.Contains("minit"))
                 {
                     return BadRequest(new { Message = "Error: minit must be the 2nd character of emp_id" });
                 }
                 throw;
             }
         }
-
-
 
         // POST: api/employees
         [HttpPost]
@@ -122,30 +109,26 @@ namespace personal_project.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            
             try
             {
-                // Check if emp_id already exists
-                var empExists = await _context.employees.AnyAsync(e => e.emp_id == form.emp_id);
-                if (empExists)
+                
+                // Use CheckIDExisted helper methods
+                if (await CheckIDExisted.EmployeeExists(_context, form.emp_id))
                 {
                     return BadRequest(new { Message = "The emp_id already exists." });
                 }
 
-                // Check if the job_id exists in the job table
-                var jobExists = await _context.jobs.AnyAsync(j => j.job_id == form.job_id);
-                if (!jobExists)
+                if (!await CheckIDExisted.JobExists(_context, form.job_id))
                 {
                     return BadRequest(new { Message = "The specified Job ID does not exist." });
                 }
 
-                // Check if the pub_id exists in the publisher table
-                var publisherExists = await _context.publishers.AnyAsync(p => p.pub_id == form.pub_id);
-                if (!publisherExists)
+                if (!await CheckIDExisted.PublisherExists(_context, form.pub_id))
                 {
                     return BadRequest(new { Message = "The specified Publisher ID does not exist." });
                 }
-
+                
                 // Create a new employee entity
                 var employee = new employee
                 {
@@ -170,20 +153,15 @@ namespace personal_project.Controllers
             }
             catch (DbUpdateException ex)
             {
-                // Check for specific SQL constraint violations                
-                if (ex.InnerException != null && ex.InnerException.Message.Contains("The level for job_id"))
-                {
-                    return BadRequest(new { Message = "Error: job_lvl is out of the allowed range." });
-                }
-                else if (ex.InnerException != null && ex.InnerException.Message.Contains("minit"))
+                // Check for specific SQL constraint violations   
+               
+                if (ex.InnerException != null && ex.InnerException.Message.Contains("minit"))
                 {
                     return BadRequest(new { Message = "Error: minit must be the 2nd character of emp_id" });
                 }
                 throw;
             }
         }
-
-
 
         // DELETE: api/employees/{id}
         [HttpDelete("{id}")]
@@ -200,10 +178,6 @@ namespace personal_project.Controllers
 
             return Ok(new { Message = "Employee deleted successfully." });
         }
-
-        private bool EmployeeExists(string id)
-        {
-            return _context.employees.Any(e => e.emp_id == id);
-        }
+       
     }
 }

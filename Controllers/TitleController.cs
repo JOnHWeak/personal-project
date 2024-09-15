@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +20,7 @@ namespace personal_project.Controllers
         {
             _context = context;
         }
-       
+
         // GET: api/titles
         [HttpGet]
         public async Task<ActionResult<IEnumerable<title>>> GetTitles()
@@ -52,25 +51,25 @@ namespace personal_project.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTitle(string id, UpdateTitle form)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var publisherExists = await _context.publishers.AnyAsync(p => p.pub_id == form.pub_id);
-            if (!publisherExists)
-            {
-                return BadRequest(new { Message = "The specified Publisher ID does not exist." });
-            }
-
+            //Check if title_id existing
             var titleToUpdate = await _context.titles.FindAsync(id);
             if (titleToUpdate == null)
             {
                 return NotFound(new { Message = $"Title with ID '{id}' not found." });
             }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }           
+            // Check if publisher exists
+            if (!await CheckIDExisted.PublisherExists(_context, form.pub_id))
+            {
+                return BadRequest(new { Message = "The specified Publisher ID does not exist." });
+            }           
 
+            // Update title properties
             titleToUpdate.title1 = form.title;
-            titleToUpdate.type = form.type;
+            titleToUpdate.type = string.IsNullOrWhiteSpace(form.type) ? "UNDECIDED" : form.type;
             titleToUpdate.pub_id = form.pub_id;
             titleToUpdate.price = form.price;
             titleToUpdate.advance = form.advance;
@@ -85,18 +84,7 @@ namespace personal_project.Controllers
             {
                 await _context.SaveChangesAsync();
                 return Ok(new { Message = "Title updated successfully." });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TitleExists(id))
-                {
-                    return NotFound(new { Message = $"Title with ID '{id}' not found." });
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            }           
             catch (Exception ex)
             {
                 return BadRequest(new { Message = "An error occurred while updating the title.", Details = ex.Message });
@@ -111,24 +99,24 @@ namespace personal_project.Controllers
             {
                 return BadRequest(ModelState);
             }
+
             // Check if title_id already exists
-            var existingTitle = await _context.titles.AnyAsync(t => t.title_id == form.title_id);
-            if (existingTitle)
+            if (await CheckIDExisted.TitleExists(_context, form.title_id))
             {
                 return Conflict(new { Message = "Title with the same ID already exists." });
             }
-            // Check if pub_id is not exists
-            var publisherExists = await _context.publishers.AnyAsync(p => p.pub_id == form.pub_id);
-            if (!publisherExists)
+
+            // Check if pub_id exists
+            if (!await CheckIDExisted.PublisherExists(_context, form.pub_id))
             {
                 return BadRequest(new { Message = "The specified Publisher ID does not exist." });
             }
-
+            //Create title properties
             var title = new title
             {
                 title_id = form.title_id,
                 title1 = form.title,
-                type = form.type,
+                type = string.IsNullOrWhiteSpace(form.type) ? "UNDECIDED" : form.type,
                 pub_id = form.pub_id,
                 price = form.price,
                 advance = form.advance,
@@ -144,18 +132,12 @@ namespace personal_project.Controllers
                 await _context.SaveChangesAsync();
                 return CreatedAtAction(nameof(GetTitle), new { id = title.title_id }, new { Message = "Title created successfully.", title });
             }
-            catch (DbUpdateException)
+            catch (Exception ex)
             {
-                if (TitleExists(title.title_id))
-                {
-                    return Conflict(new { Message = "Title with the same ID already exists." });
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                return BadRequest(new { Message = "An error occurred while updating the title.", Details = ex.Message });
+            }     
         }
+    
 
         // DELETE: api/titles/{id}
         [HttpDelete("{id}")]
@@ -171,11 +153,6 @@ namespace personal_project.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { Message = "Title deleted successfully." });
-        }
-
-        private bool TitleExists(string id)
-        {
-            return _context.titles.Any(e => e.title_id == id);
         }
     }
 }

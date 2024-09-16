@@ -67,30 +67,31 @@ namespace personal_project.Controllers
             try
             {
                 // Use CheckIDExisted helper methods
-                if (!await CheckIDExisted.JobExists(_context, form.job_id))
+                if (form.job_id.HasValue && !await CheckIDExisted.JobExists(_context, form.job_id.Value))
                 {
                     return BadRequest(new { Message = "The specified Job ID does not exist." });
                 }
 
-                if (!await CheckIDExisted.PublisherExists(_context, form.pub_id))
+                if (!string.IsNullOrEmpty(form.pub_id) && !await CheckIDExisted.PublisherExists(_context, form.pub_id))
                 {
                     return BadRequest(new { Message = "The specified Publisher ID does not exist." });
                 }
-                // Update the employee's details                 
+
+                // Update the employee's details
                 existingEmployee.fname = form.fname;
                 existingEmployee.minit = form.minit;
                 existingEmployee.lname = form.lname;
-                existingEmployee.job_id = form.job_id;
-                existingEmployee.job_lvl = form.job_lvl;
-                existingEmployee.pub_id = form.pub_id;
-                existingEmployee.hire_date = form.hire_date;
+                existingEmployee.job_id = form.job_id ?? existingEmployee.job_id; // Use existing if null
+                existingEmployee.job_lvl = form.job_lvl ?? existingEmployee.job_lvl; // Use existing if null
+                existingEmployee.pub_id = form.pub_id ?? existingEmployee.pub_id; // Use existing if null
+                existingEmployee.hire_date = form.hire_date ?? existingEmployee.hire_date; // Use existing if null
 
                 // Save changes to the database
                 await _context.SaveChangesAsync();
                 return Ok(new { Message = "Employee updated successfully." });
             }
             catch (DbUpdateException ex)
-            {               
+            {
                 // Check for specific SQL constraint violations
                 if (ex.InnerException != null && ex.InnerException.Message.Contains("minit"))
                 {
@@ -99,6 +100,7 @@ namespace personal_project.Controllers
                 throw;
             }
         }
+
 
         // POST: api/employees
         [HttpPost]
@@ -111,8 +113,22 @@ namespace personal_project.Controllers
             }
             
             try
-            {
-                
+            {                
+                // Set default values if they are not provided 
+                if (form.job_id == 0)
+                {
+                    form.job_id = 1; // Set a valid default job_id
+                }
+
+                if (form.job_lvl == 0 || form.job_lvl == null)
+                {
+                    form.job_lvl = 10; // Set a valid default job_lvl
+                }
+
+                if (string.IsNullOrEmpty(form.pub_id))
+                {
+                    form.pub_id = "9952"; // Apply default value "9952"
+                }
                 // Use CheckIDExisted helper methods
                 if (await CheckIDExisted.EmployeeExists(_context, form.emp_id))
                 {
@@ -128,7 +144,7 @@ namespace personal_project.Controllers
                 {
                     return BadRequest(new { Message = "The specified Publisher ID does not exist." });
                 }
-                
+
                 // Create a new employee entity
                 var employee = new employee
                 {

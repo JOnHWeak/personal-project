@@ -51,32 +51,34 @@ namespace personal_project.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTitle(string id, UpdateTitle form)
         {
-            //Check if title_id existing
+            // Check if title_id exists
             var titleToUpdate = await _context.titles.FindAsync(id);
             if (titleToUpdate == null)
             {
                 return NotFound(new { Message = $"Title with ID '{id}' not found." });
             }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
-            }           
+            }
+
             // Check if publisher exists
-            if (!await CheckIDExisted.PublisherExists(_context, form.pub_id))
+            if (!string.IsNullOrWhiteSpace(form.pub_id) && !await CheckIDExisted.PublisherExists(_context, form.pub_id))
             {
                 return BadRequest(new { Message = "The specified Publisher ID does not exist." });
-            }           
+            }
 
             // Update title properties
-            titleToUpdate.title1 = form.title;
-            titleToUpdate.type = string.IsNullOrWhiteSpace(form.type) ? "UNDECIDED" : form.type;
-            titleToUpdate.pub_id = form.pub_id;
-            titleToUpdate.price = form.price;
-            titleToUpdate.advance = form.advance;
-            titleToUpdate.royalty = form.royalty;
-            titleToUpdate.ytd_sales = form.ytd_sales;
-            titleToUpdate.notes = form.notes;
-            titleToUpdate.pubdate = form.pubdate;
+            titleToUpdate.title1 = form.title ?? titleToUpdate.title1;
+            titleToUpdate.type = string.IsNullOrWhiteSpace(form.type) ? titleToUpdate.type : form.type;
+            titleToUpdate.pub_id = form.pub_id ?? titleToUpdate.pub_id;
+            titleToUpdate.price = form.price ?? titleToUpdate.price;
+            titleToUpdate.advance = form.advance ?? titleToUpdate.advance;
+            titleToUpdate.royalty = form.royalty ?? titleToUpdate.royalty;
+            titleToUpdate.ytd_sales = form.ytd_sales ?? titleToUpdate.ytd_sales;
+            titleToUpdate.notes = form.notes ?? titleToUpdate.notes;
+            titleToUpdate.pubdate = form.pubdate ?? titleToUpdate.pubdate;
 
             _context.Entry(titleToUpdate).State = EntityState.Modified;
 
@@ -84,12 +86,13 @@ namespace personal_project.Controllers
             {
                 await _context.SaveChangesAsync();
                 return Ok(new { Message = "Title updated successfully." });
-            }           
+            }
             catch (Exception ex)
             {
                 return BadRequest(new { Message = "An error occurred while updating the title.", Details = ex.Message });
             }
         }
+
 
         // POST: api/titles
         [HttpPost]

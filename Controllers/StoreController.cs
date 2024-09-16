@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -21,8 +20,6 @@ namespace personal_project.Controllers
         {
             _context = context;
         }
-
-      
 
         // GET: api/stores
         [HttpGet]
@@ -66,11 +63,11 @@ namespace personal_project.Controllers
             }
 
             // Update the store's details
-            store.stor_name = storeForm.stor_name;
-            store.stor_address = storeForm.stor_address;
-            store.city = storeForm.city;
-            store.state = storeForm.state;
-            store.zip = storeForm.zip;
+            store.stor_name = storeForm.stor_name ?? store.stor_name;
+            store.stor_address = storeForm.stor_address ?? store.stor_address;
+            store.city = storeForm.city ?? store.city;
+            store.state = storeForm.state ?? store.state;
+            store.zip = storeForm.zip ?? store.zip;
 
             try
             {
@@ -83,11 +80,7 @@ namespace personal_project.Controllers
                 {
                     return BadRequest(new { Message = "Data integrity violation. Please check the values for StoreID, state, and zip." });
                 }
-                throw;
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = "An error occurred while updating the store.", Details = ex.Message });
+                throw; // Re-throw exception to let it propagate if not handled
             }
         }
 
@@ -99,26 +92,27 @@ namespace personal_project.Controllers
             {
                 return BadRequest(ModelState);
             }
+
             // Check if the StoreID already exists using the helper method
             if (await CheckIDExisted.StoreExists(_context, storeForm.stor_id))
             {
                 return BadRequest(new { Message = "The StoreID already exists." });
             }
+
+            var store = new store
+            {
+                stor_id = storeForm.stor_id,
+                stor_name = storeForm.stor_name,
+                stor_address = storeForm.stor_address,
+                city = storeForm.city,
+                state = storeForm.state,
+                zip = storeForm.zip
+            };
+
+            _context.stores.Add(store);
             try
             {
-                var store = new store
-                {
-                    stor_id = storeForm.stor_id,
-                    stor_name = storeForm.stor_name,
-                    stor_address = storeForm.stor_address,
-                    city = storeForm.city,
-                    state = storeForm.state,
-                    zip = storeForm.zip
-                };
-
-                _context.stores.Add(store);
                 await _context.SaveChangesAsync();
-
                 return CreatedAtAction(nameof(GetStore), new { id = store.stor_id }, new { Message = "Store created successfully.", store });
             }
             catch (DbUpdateException ex)
@@ -127,11 +121,7 @@ namespace personal_project.Controllers
                 {
                     return BadRequest(new { Message = "Data integrity violation. Please check the values for StoreID, state, and zip." });
                 }
-                throw;
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = "An error occurred while creating the store.", Details = ex.Message });
+                throw; // Re-throw exception to let it propagate if not handled
             }
         }
 
@@ -150,6 +140,5 @@ namespace personal_project.Controllers
 
             return Ok(new { Message = $"Store '{store.stor_name}' with ID '{store.stor_id}' deleted successfully." });
         }
-        
     }
 }
